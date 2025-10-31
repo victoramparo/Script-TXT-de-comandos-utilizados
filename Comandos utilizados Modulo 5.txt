@@ -2,7 +2,8 @@ Comandos utilizados practica 1:
 
 sudo dnf install rsync -y
 sudo systemctl status rsyncd
-ssh-copy-id 
+mkdir carpeta
+touch archivo{1..100}.txt
 rsync -avz /home/victoramparo/Desktop/carpeta1 victoramparo@192.168.100.146:/home/victoramparo
 sudo nano /comando_script.sh
 rsync -avz /home/victoramparo/Desktop/carpeta1 victoramparo@192.168.100.146:/home/victoramparo
@@ -25,5 +26,6 @@ sudo pcs status
 sudo pcs resource create FloatingIP ocf:heartbeat:IPaddr2 ip=192.168.100.150 cidr_netmask=24 nic=ens33 op monitor interval=30s
 sudo pcs resource start FloatingIP
 sudo pcs status resources
+
 
 
