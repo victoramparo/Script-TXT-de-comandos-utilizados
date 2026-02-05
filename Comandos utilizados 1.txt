@@ -1,0 +1,78 @@
+Comandos usados practica 1
+
+date
+
+============================================
+
+Comandos usados practica 2
+
+date
+nmcli device status
+sudo nmcli connection delete ens160
+nmcli device status
+ip a
+clear
+nmcli con add type ethernet ifname ens160 con-name ens160 ipv4.method auto autoconnect yes
+nmcli con up ens160
+ip a
+clear
+sudo nmcli connection delete ens160
+nmcli con add type ethernet ifname ens160 con-name ens160 ipv4.method manual ipv4.addresses 192.168.1.100/24 ipv4.gateway 192.168.1.1 autoconnect yes
+nmcli con up ens160
+ip a
+nmtui
+nmcli con up ens160
+ping -c 4 8.8.8.8
+ping -c 4 8.8.4.4
+
+============================================
+
+Comandos usados practica 3
+
+sudo su
+useradd victor
+id victor
+usermod -aG wheel victor
+id victor
+clear
+groupadd guest
+useradd invitado
+passwd invitado
+clear
+usermod -aG guest invitado
+id invitado
+userdel -r invitado
+groupdel guest
+id guest
+id invitado
+clear
+exit
+date
+
+============================================
+
+Comandos usados practica 4
+
+date
+mkdir materia
+cd materia
+vi estudiante.txt
+cat estudiante.txt
+ls -l estudiante.txt
+chmod 700 estudiante.txt
+ls -l estudiante.txt
+chmod 070 estudiante.txt
+ls -l estudiante.txt
+cd ..
+mkdir materia2
+sudo cp materia/estudiante.txt materia2/
+ls
+cd materia2
+cat estudiante.txt
+sudo cat estudiante.txt
+cd ..
+rm -rf materia
+id materia
+clear
+
+============================================
