@@ -1,0 +1,43 @@
+Comandos usados practica 1
+
+date
+sudo dnf update -y     
+sudo dnf upgrade -y
+sudo dnf repolist
+sudo dnf repolist all
+sudo dnf search bashtop
+sudo dnf install epel-release
+sudo dnf install btop
+btop
+sudo dnf remove btop --setopt=protected_multilib=false
+btop
+dnf list installed btop
+clear
+
+============================================
+
+Comandos usados practica 2
+
+date
+sudo crontab -e
+0 23 * * * dnf update -y
+0 3 * * 0 /sbin/reboot
+:wq
+sudo crontab -l
+sudo systemctl start atd
+sudo systemctl enable atd
+sudo systemctl status atd
+sudo at now + 1 minute
+sudo rm -rf /tmp/*
+Ctrl + D
+sudo atq
+sudo ls /tmp
+clear
+
+============================================
+
+Comandos usados practica 3
+
+
+
+============================================
