@@ -1,0 +1,95 @@
+Comandos usados practica 1
+
+date
+sudo dnf install grub2 grub2-tools
+sudo nano /etc/default/grub
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+sudo reboot
+rd.break
+mount -o remount,rw /sysroot
+chroot /sysroot
+passwd
+touch /.autorelabel
+clear
+
+============================================
+
+Comandos usados practica 2
+
+date
+nano backup.sh
+FECHA=$(date +"%d-%m-%Y:%H:%M")
+tar -cvf /home/$USER/backup_$FECHA.tar /home/$USER
+echo "Backup creado correctamente con nombre: backup_$FECHA.tar"
+chmod +x backup.sh
+./backup.sh
+nano guardar_ifconfig.sh
+echo "¿Qué nombre desea ponerle al archivo?"
+read NOMBRE
+mkdir -p $HOME/Desktop
+ifconfig > $HOME/Desktop/$NOMBRE.txt
+echo "Archivo creado correctamente en Desktop como $NOMBRE.txt"
+chmod +x guardar_ifconfig.sh
+./guardar_ifconfig.sh
+ls
+cd Desktop
+cat ifconfiginfo
+clear
+
+============================================
+
+Comandos usados practica 3
+
+date
+ip a
+ping 192.168.100.192
+sudo dnf install openssh-server -y
+sudo systemctl start sshd
+sudo systemctl enable sshd
+sudo systemctl status sshd
+ssh victoramparo@192.168.100.192
+exit
+ssh-keygen
+notepad
+ls -a
+mkdir .ssh
+cd .ssh
+sudo nano authorized_keys
+clear
+
+============================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
