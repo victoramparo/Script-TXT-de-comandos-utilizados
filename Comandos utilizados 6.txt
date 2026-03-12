@@ -1,0 +1,116 @@
+Comandos usados practica 1
+
+date
+sudo dnf install gnupg2 -y
+gpg2 --full-generate-key
+mkdir practica-gpg
+cd practica-gpg
+nano archivo.txt
+cat archivo.txt
+gpg2 -c archivo.txt
+ls
+cat archivo.txt.gpg
+gpg2 -d archivo.txt.gpg
+ls
+gpg2 -o archivo_descifrado.txt -d archivo.txt.gpg
+ls
+cat archivo_descifrado.txt
+clear
+
+============================================
+
+Comandos usados practica 2
+
+date
+
+sudo dnf install httpd vsftpd openssh-server -y
+
+# Iniciar y habilitar servicios
+sudo systemctl enable --now httpd vsftpd sshd
+
+# Verificación de estado
+sudo systemctl status httpd vsftpd sshd
+
+verificar los puertos abiertos:
+ss -tulnp
+
+curl -I http://localhost
+ftp localhost
+ssh localhost
+
+Bloquear los puertos con IP Tables
+sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP
+
+Verificar las reglas
+sudo iptables -L -n
+
+Habilitar nuevamente los puertos con IP Tables
+
+Eliminar las reglas creadas:
+
+sudo iptables -D INPUT -p tcp --dport 80 -j DROP
+sudo iptables -D INPUT -p tcp --dport 21 -j DROP
+sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+
+sudo iptables -L
+
+Bloquear los puertos con Firewall-cmd
+
+Primero verificamos firewall:
+
+sudo systemctl status firewalld
+
+sudo firewall-cmd --permanent --remove-service=http
+sudo firewall-cmd --permanent --remove-service=ftp
+sudo firewall-cmd --permanent --remove-service=ssh
+
+sudo firewall-cmd --reload
+
+sudo firewall-cmd --list-all
+
+curl -I http://<IP_SERVIDOR>     # Connection refused
+ftp <IP_SERVIDOR>                # Connection refused
+ssh usuario@<IP_SERVIDOR>        # Connection refused
+
+Habilitar nuevamente los servicios con Firewall-cmd
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=ftp
+sudo firewall-cmd --permanent --add-service=ssh
+
+Recargar reglas:
+
+sudo firewall-cmd --reload
+
+clear
+
+============================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
