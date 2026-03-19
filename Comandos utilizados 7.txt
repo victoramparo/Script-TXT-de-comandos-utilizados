@@ -1,0 +1,176 @@
+Comandos usados practica 1
+
+date
+📌 Instalar NFS
+
+sudo dnf install nfs-utils -y
+
+📌 Habilitar y arrancar el servicio
+
+sudo systemctl enable --now nfs-server
+sudo systemctl status nfs-server
+
+🔹 2. Crear directorio compartido
+
+sudo mkdir -p /OS3
+📌 Crear 100 archivos (Adrian1.txt … Adrian100.txt)
+
+touch Adrian{1..100}.txt
+
+🔹 3. Asignar permisos
+
+sudo chmod -R 777 /OS3
+sudo chown -R nobody:nobody /OS3
+
+🔹 4. Configurar EXPORTS
+
+Editar el archivo:
+
+sudo nano /etc/exports
+
+/OS3 192.168.100.184/24(rw,sync,no_root_squash)
+
+🔹 Explicación:
+
+rw → lectura y escritura
+
+sync → escritura segura
+
+no_root_squash → root del cliente tiene permisos
+
+📌 Aplicar configuración
+sudo exportfs -rav
+
+📌 Verificar
+showmount -e
+
+🔹 5. Configurar firewall (MUY IMPORTANTE)
+sudo firewall-cmd --permanent --add-service=nfs
+sudo firewall-cmd --permanent --add-service=mountd
+sudo firewall-cmd --permanent --add-service=rpc-bind
+sudo firewall-cmd --reload
+
+💻 6. CONFIGURAR CLIENTE NFS
+📌 Instalar cliente NFS
+
+sudo dnf install nfs-utils -y
+
+📌 Crear punto de montaje
+
+sudo mkdir -p /mnt/OS3
+📌 Montar manualmente
+
+sudo mount 192.168.100.193:/OS3 /mnt/OS3
+
+📌 Verificar acceso
+ls /mnt/OS3
+
+Desmontamos 
+
+sudo umount /mnt/OS3
+
+verificamos: ls /mnt/OS3
+
+🔁 7. MONTAJE AUTOMÁTICO (fstab)
+
+Editar:
+
+sudo nano /etc/fstab
+
+Agregar:
+
+192.168.100.193:/OS3   /mnt/OS3   nfs   defaults   0 0
+
+sudo reboot
+ls /mnt/OS3
+clear
+
+============================================
+
+Comandos usados practica 2
+
+# Instalar SAMBA y herramientas cliente
+sudo dnf install -y samba samba-common samba-client
+
+# Iniciar servicios SMB y NMB
+sudo systemctl start smb nmb
+
+# Habilitar inicio automatico
+sudo systemctl enable smb nmb
+
+# Verificar estado
+sudo systemctl status smb nmb
+
+# Configurar firewall
+sudo firewall-cmd --permanent --add-service=samba
+sudo firewall-cmd --reload
+------------------------
+# PASO 2: CREAR CARPETA COMPARTIDA Y PERMISOS
+# -------------------------------------------------
+
+# Crear directorio
+sudo mkdir -p /srv/samba/compartida
+
+# Crear grupo y usuario para SAMBA
+sudo groupadd sambausers
+sudo useradd -M -s /sbin/nologin -G sambausers samba1
+
+# Establecer permisos
+sudo chown -R samba1:sambausers /srv/samba/compartida
+
+# Cambiar al directorio compartido
+cd /srv/samba/compartida
+
+# Crear 100 archivos
+sudo touch adrian{1..100}
+ls
+ls -l
+
+# dar todos los permisos
+sudo chmod -R 777 /srv/samba/compartida
+ls -l
+
+# Configurar contexto SELinux
+sudo semanage fcontext -a -t samba_share_t "/srv/samba/compartida(/.*)?"
+sudo restorecon -Rv /srv/samba/compartida
+
+# Crear usuario SAMBA (ingresar contraseña cuando solicite)
+sudo smbpasswd -a samba1
+
+# Crear nueva configuracion
+
+sudo nano /etc/samba/smb.conf
+
+[global]
+    workgroup = WORKGROUP
+    server string = Servidor SAMBA Rocky Linux
+    security = user
+    map to guest = never
+    dns proxy = no
+
+[Compartida]
+    comment = Carpeta Compartida Practica 2
+    path = /srv/samba/compartida
+    browseable = yes
+    writable = yes
+    guest ok = no
+    valid users = samba1, @sambausers
+    create mask = 0664
+    directory mask = 0775
+    force group = sambausers
+
+# Reiniciar servicios
+sudo systemctl restart smb nmb
+
+\\192.168.100.193\Compartida
+
+cd /srv/samba/compartida
+ls
+cat adrian99
+clear
+
+============================================
+
+
+
+
