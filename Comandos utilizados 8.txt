@@ -1,0 +1,113 @@
+Comandos usados practica 1
+
+date
+
+# Instalar Docker
+sudo dnf check-update
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl --now enable docker
+sudo systemctl status docker
+
+
+#Busque de images
+sudo docker search nginx
+
+# Descargar imagen de NGINX
+sudo docker pull nginx:latest
+
+#Verificar instalación
+sudo docker images
+
+
+# Crear directorio para el volumen persistente
+sudo mkdir -p /home/website
+
+# Crear contenedor NGINX con mapeo de puertos y volumen
+sudo docker run -d --name my-nginx -p 8888:80 -v /home/website:/usr/share/nginx/html nginx:latest
+
+# Crear archivo index.html
+sudo nano /home/website/index.html
+
+<h1>Víctor Amparo 2023-1880</h1>
+
+# Verificar que el contenedor está funcionando
+sudo docker ps
+
+#Ingresar al navegador
+127.0.0.1:8888
+
+clear
+
+============================================
+
+Comandos usados practica 2
+
+#Link de pagina oficial
+
+https://docs.portainer.io/start/install-ce/server/docker/linux
+
+date
+su -
+
+# Crear volumen para Portainer
+
+docker volume create portainer_data
+
+# Ejecutar Portainer
+docker run -d \
+  --name portainer \
+  -p 9443:9443 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v portainer_data:/data \
+  --restart always \
+  portainer/portainer-ce:latest
+
+# Acceder a la interfaz web en: https://127.0.0.1:9443
+
+============================================
+
+Comandos usados practica 3
+
+date
+
+sudo dnf install -y docker-compose-plugin
+
+# Crear archivo docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+EOF
+
+# Ejecutar Docker Compose
+sudo docker compose up -d
+
+# Acceder a Wordpress en: http://127.0.0.1:8080
+
+clear
+
+============================================
