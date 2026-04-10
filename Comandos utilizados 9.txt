@@ -1,0 +1,269 @@
+--------------------Practica 2--------------------------------------
+
+Comandos utilizados, práctica laboratorio 9.2: Infraestructura como Código (IaC) y Automatización
+
+Despliegue de una VM con Terraform en DigitalOcean.
+
+============================================
+
+#Crear token de API en DigitalOcean
+> API >Generate New Token > Name (terraform-token) >Read and Write' (full access)>Generate Token.
+
+#Crear o subir la llave pública SSH
+>Settings >Security >Add SSH Key.
+
+#En nuestro servidor, ejecutamos:
+   cat ~/.ssh/id_rsa.pub
+
+cd .ssh/
+
+#Copiamos la salida del comando anterior (Si no existe, créala con ssh-keygen) y pégala en DigitalOcean.
+
+#Instalar Terraform en Rocky Linux
+sudo dnf install -y yum-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+sudo dnf install -y terraform
+
+terraform -version
+
+#Crear carpeta y archivo de configuración Terraform
+
+mkdir ~/terraform-digitalocean
+cd ~/terraform-digitalocean
+
+nano main.tf
+
+   terraform {
+     required_providers {
+       digitalocean = {
+         source  = "digitalocean/digitalocean"
+         version = "~> 2.0"
+       }
+     }
+   }
+   provider "digitalocean" {
+     token = var.do_token
+   }
+   variable "do_token" {}
+
+
+#Crear archivo de variables para el token
+nano terraform.tfvars
+
+#Escribe tu token:
+do_token = "TU_TOKEN_DE_DIGITALOCEAN"
+
+#Inicializar Terraform
+terraform init
+
+#Crear la configuración del Droplet
+nano main.tf
+
+#Añade al final:
+   resource "digitalocean_droplet" "OS3vm" {
+     image    = "ubuntu-22-04-x64"
+     name     = "OS3vm"
+     region   = "nyc1"
+     size     = "s-1vcpu-1gb"
+     ssh_keys = [ "fingerprint" ]
+   }
+
+
+#Validar configuración
+terraform validate
+
+#Desplegar la máquina virtual
+terraform apply
+Responder yes
+
+#Validar la VM en el portal de DigitalOcean.
+
+#Por SSH (Reemplaza DIRECCION_IP con la IP pública del droplet)
+   ssh root@DIRECCION_IP
+
+
+
+
+
+
+
+
+
+--------------------Practica 3--------------------------------------
+
+
+Comandos utilizados, práctica laboratorio 9.3: Infraestructura como Código (IaC) y Automatización.
+
+Instalación y Configuración de Ansible
+============================================
+
+#Instalar Ansible en Rocky Linux (VM-Server) y dependencias para conectar con Windows:
+
+sudo dnf install epel-release -y
+sudo dnf install ansible-core -y
+pip install pywinrm
+pip3 install pywinrm        
+
+#Si no tienes pip3, instálalo con: 
+sudo dnf install python3-pip -y
+
+ansible --version
+
+#Crear usuario 'ansible' en ambas máquinas cliente.
+
+#En la VM Linux (cliente en DigitalOcean):
+sudo useradd -m ansible
+sudo passwd ansible
+sudo usermod -aG wheel ansible
+#Permitir sudo sin contraseña (opcional):
+echo 'ansible ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ansible
+
+#En la VM Windows:
+Settings >Accounts >Other users >Add someone else to this pc >I don’t have this person’s sign-in information >Add user without a Microsoft Account.
+
+#Luego de colocar el nombre (ansible) y contraseña, cambia el tipo de cuenta y seleccionar 'Administrador'.
+
+#En nuestro servidor Rocky Linux, ejecutamos:
+cat ~/.ssh/id_ed25519.pub
+
+#Copiamos la salida del comando anterior (Si no existe, créala con ssh-keygen) y la copiamos al cliente.
+
+
+ssh-keygen en nuestro cliente
+dnf install nano
+nano authorized_keys
+
+ssh -i /root/.ssh/id_ed25519 ansible@ipmaquinacliente
+
+ssh-copy-id ansible@IP_DEL_CLIENTE_LINUX
+#(Reemplaza IP_DEL_CLIENTE_LINUX por la IP de la máquina de DigitalOcean)
+
+#Configurar WinRM en Windows 10
+
+#Cambiar el perfil de red a 'Privado':
+Settings > Network & Internet >Ethernet > Network profile >Private.
+
+# Asegúrate de que el servicio 'Windows Remote Management (WS-Management)' esté iniciado y en modo automático.
+Win + R > services.msc > Windows Remote Management (WS-Management)> Startup type: automatic >Service status: Running (start)
+
+#Abrir PowerShell como administrador.
+#Ejecutar:
+
+winrm quickconfig
+winrm set winrm/config/service/auth '@{Basic="true"}'
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+winrm set winrm/config/listener?Address=*+Transport=HTTP '@{Port="5985"}'
+
+Set-Item -Path WSMan:\localhost\Service\AllowUnencrypted -Value $true
+Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value $true
+
+#Crear inventario de Ansible (/etc/ansible/hosts) en el servidor Rocky.
+#Editar el archivo de inventario:
+
+sudo nano /etc/ansible/hosts
+
+#Ejemplo de contenido:
+
+[linux]
+cliente1 ansible_host=IP_DEL_CLIENTE_LINUX ansible_user=ansible ansible_ssh_private_key_file=~/.ssh/id_ed25519 ansible_become=true ansible_become_method=sudo
+
+[win]
+cliente2 ansible_host=IP_DEL_CLIENTE_WINDOWS ansible_user=ansible ansible_password=TU_CONTRASEÑA ansible_connection=winrm ansible_winrm_transport=basic ansible_port=5985 ansible_winrm_server_cert_validation=ignore
+
+#Reemplazar IP y contraseña según corresponda.
+
+#Probar conectividad con módulo ping
+ansible linux -m ping
+ansible win -m win_ping
+
+
+
+--------------------Practica 4--------------------------------------
+
+
+
+Comandos utilizados, práctica laboratorio 9.4: Infraestructura como Código (IaC) y Automatización.
+
+Comandos Ad-Hoc con Ansible 
+============================================
+
+#Comando ad-hoc para copiar un archivo de Windows (deberás poseer el archivo txt a utilizar, localizado en el escritorio de tu máquina)
+ansible win -m win_copy \
+  -a "src='C:/Users/ansible/Desktop/Prueba_Adrian.txt' dest='C:/Users/ansible/Documents/HOLA.txt' remote_src=yes"
+
+
+#Comando ad-hoc para reiniciar la VM cliente Linux (ansible1)
+ansible linux -m reboot -b
+
+
+
+
+
+
+
+
+--------------------Practica 5--------------------------------------
+
+
+Comandos utilizados, práctica laboratorio 9.5: Infraestructura como Código (IaC) y Automatización.
+
+Uso de Playbooks en Ansible 
+============================================
+
+#Crear Playbook para instalar Notepad++ en Windows (ansible2)
+
+#Crear el archivo del playbook:
+
+sudo nano install_notepadpp.yml
+
+>
+
+- name: Instalar Notepad++ en Windows
+  hosts: win
+  tasks:
+    - name: Descargar instalador de Notepad++
+      win_get_url:
+        url: https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.8/npp.8.6.8.Installer.x64.exe
+        dest: C:\\Users\\ansible\\Downloads\\npp_installer.exe
+
+    - name: Instalar Notepad++
+      win_package:
+        path: C:\\Users\\ansible\\Downloads\\npp_installer.exe
+        state: present
+        arguments: /S
+
+
+#Ejecutar el playbook:
+ansible-playbook install_notepadpp.yml
+
+#Verificar la instalación: Desde la VM Windows, abrir el menú Inicio y buscar “Notepad++”. La aplicación debe estar instalada.
+
+#Crear Playbook para instalar NGINX en Linux (ansible1)
+
+#Crear el archivo del playbook:
+
+sudo nano install_nginx.yml
+>
+- name: Instalar NGINX en Linux
+  hosts: linux
+  become: true
+  tasks:
+    - name: Instalar nginx
+      dnf:
+        name: nginx
+        state: present
+
+    - name: Iniciar y habilitar nginx
+      systemd:
+        name: nginx
+        enabled: true
+        state: started
+
+#Ejecutar el playbook:
+ansible-playbook install_nginx.yml
+
+#Verificar la instalación: Desde la VM cliente Linux:
+sudo systemctl status nginx
+
+#O desde un navegador, visitar la IP de la VM Linux para ver la página por defecto de NGINX.
+
