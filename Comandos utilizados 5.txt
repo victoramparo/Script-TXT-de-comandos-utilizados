@@ -1,0 +1,225 @@
+------------------------------Practica 1 --------------------------------------
+
+--------------1. Instalación de Rsync (en ambos servidores)-----------------
+
+sudo dnf install rsync -y
+
+---------------Configuración SSH sin contraseña------------------------
+
+ssh-keygen -t ed25519 -C "QLOK"  # Presionar Enter para todas las opciones
+
+
+---------------Copiar clave al servidor secundario:----------------
+
+ssh-copy-id victoramparo@<IP-del-servidor-secundario>
+
+
+-------------Crear carpetas y archivos de prueba------------------------
+
+mkdir ~/archivos
+cd ~/archivos
+touch Archivos{1..100}.txt  # 100 archivos de prueba
+ls
+
+-----------------------------En el servidor secundario:---------------
+
+mkdir ~/sync
+
+
+--------------------Sincronización manual inicial-----------------------
+
+rsync -avz ~/archivos/ victoramparo@ipsecundaria:~/sync/
+
+
+-------------Verificación en el servidor secundario:--------------
+cd ~/sync
+ls  # Deben aparecer los 100 archivos
+
+
+--------------------Automatización con Script y Cron-----------------
+
+----------Crear script de sincronización:------------
+nano ~/script_sync.sh
+
+Añadir:
+
+#!/bin/bash
+rsync -avz --delete ~/archivos/ victoramparo@ip:~/sync/
+
+
+-----------Dar permisos de ejecución:-----------------
+
+chmod +x ~/script_sync.sh
+
+-------------Programar en Cron:--------------------------
+crontab -e
+
+--------------Añadir esta línea (para ejecutar cada minuto):--------------------
+
+* * * * * /home/victoramparo/script_sync.sh >> /home/victoramparo/sync.log 2>&1
+
+
+----------------Reiniciar el servicio Cron:---------------------
+
+sudo systemctl restart crond
+
+----------------Prueba de funcionamiento--------------------
+
+Crear nuevos archivos en el servidor principal:
+
+cd ~/archivos
+touch prueba{1..10}.txt
+
+
+--------Verificar sincronización en el servidor secundario (después de 1 minuto):--------
+
+cd ~/sync
+ls
+
+----------Ver logs de sincronización:--------------
+
+cat ~/sync.log
+
+
+
+
+---------------------------------------Practica 2-------------------------------------------
+
+
+//Eliminar
+
+sudo pcs cluster stop --all || true
+sudo pcs cluster destroy || true
+sudo rm -f /etc/corosync/corosync.conf
+sudo systemctl stop pacemaker corosync pcsd
+sudo systemctl disable pacemaker corosync pcsd
+sudo systemctl enable pcsd --now
+
+
+
+
+
+# ---------- EN AMBAS VMs (primero VM1, luego VM2) ----------
+sudo dnf config-manager --set-enabled highavailability
+sudo dnf install -y pacemaker pcs psmisc
+sudo firewall-cmd --permanent --add-service=high-availability
+sudo firewall-cmd --reload
+sudo systemctl enable pcsd --now
+echo "123456" | sudo passwd --stdin hacluster
+
+
+# ---------- SOLO EN VM1 (Nodo principal) - Ejecutar 1 a 1 ----------
+sudo pcs host auth ip1 ip2 -u hacluster -p 12345
+sudo pcs cluster setup pacemaker1 ip1 ip2
+sudo pcs cluster start --all
+sudo pcs cluster enable --all
+
+
+# ---------- EN AMBAS VMs (verificar estado) ----------
+sudo pcs status
+
+# ---------- SOLO EN VM1 (configuración final) ----------
+sudo pcs property set stonith-enabled=false
+sudo pcs resource create ClusterIP ocf:heartbeat:IPaddr2 ip=poner ip cidr_netmask=24 op monitor interval=30s
+
+
+# ---------- EN HOST (comprobación) ----------
+# ping 10.0.0.100 -t
+
+
+
+
+
+-------------------------Practica 3-------------------------------------------
+
+
+# Instalamos Apache
+sudo dnf install -y httpd
+
+# Creamos el archivo HTML de prueba
+echo "<h1>Servidor 1 - IP: "ip del servidor"/h1>" | sudo tee /var/www/html/servidores
+echo "<h1>Servidor 2 - IP: "ip del servidor"</h1>" | sudo tee /var/www/html/servidores
+
+----------------No. 1 # Editamos configuración de Apache para puerto 8888-----------------------------
+sudo sed -i 's/^Listen .*/Listen 8888/' /etc/httpd/conf/httpd.conf
+
+-----------------No.2---------------------------------
+
+--------------Abrir el archivo de configuración de Apache-------
+sudo nano /etc/httpd/conf/httpd.conf
+
+---------------------Buscar la línea que diga algo como:---------------------
+Listen 80
+
+----------------Cambiarla por:----------------------
+Listen 8888
+
+---------------Si quieres que escuche en varios puertos, puedes añadir más líneas, por ejemplo:-----------------------
+Listen 8888
+Listen 80
+
+
+------------------------# Abrimos el puerto 8888 en firewall---------------------------------
+sudo firewall-cmd --add-port=8888/tcp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+
+----------------------# Permitimos puerto 8888 en SELinux-------------------------------------
+sudo semanage port -a -t http_port_t -p tcp 8888
+sudo semanage port -l | grep http_port_t
+
+-----------------------# Habilitamos y arrancamos Apache----------------------------------------
+sudo systemctl enable httpd
+sudo systemctl start httpd
+sudo systemctl status httpd
+
+-----------------------------# Instalamos Keepalived--------------------------------------
+sudo dnf install -y keepalived
+
+--------------------------------# Configuración para MASTER-------------------------------------
+
+
+sudo tee /etc/keepalived/keepalived.conf > /dev/null <<EOL
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 99
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+    virtual_ipaddress {
+        ip/24
+    }
+}
+EOL
+
+------------------------# Configuración para BACKUP------------------------------------------
+
+# sudo tee /etc/keepalived/keepalived.conf > /dev/null <<EOL
+# vrrp_instance VI_1 {
+#     state BACKUP
+#     interface eth0
+#     virtual_router_id 51
+#     priority 50
+#     advert_int 1
+#     authentication {
+#         auth_type PASS
+#         auth_pass 1234
+#     }
+#     virtual_ipaddress {
+#         ip/24
+#     }
+# }
+# EOL
+
+----------------------------# Habilitamos y arrancamos Keepalived-----------------------------
+sudo systemctl enable keepalived
+sudo systemctl start keepalived
+sudo systemctl status keepalived
+
+----------------------------------# Reiniciamos Apache--------------------------------
+sudo systemctl restart httpd
+sudo systemctl status httpd
